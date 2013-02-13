@@ -1,14 +1,18 @@
 package com.raver.buka;
 
+import com.raver.buka.BukArrestGame.MapField;
+
+
 public class Gridable {
-	boolean[][] map;
+	MapField[][] map;
 	int row;
 	int col;
 	int nextRow;
 	int nextCol;
 	float progress = 1.0f;
+	float speed = 5.0f;
 	
-	Gridable(boolean[][] map, int row, int col)
+	Gridable(MapField[][] map, int row, int col)
 	{
 		this.map = map;
 		
@@ -22,7 +26,7 @@ public class Gridable {
 	
 	void update(float delta)
 	{
-		progress += delta*5;
+		progress += delta*speed;
 		
 		if(progress >= 1.0f)
 		{
@@ -35,7 +39,7 @@ public class Gridable {
 	
 	boolean canMoveUp()
 	{
-		return row + 1 < map.length && !map[row + 1][col]; 
+		return row + 1 < map.length && !map[row + 1][col].w; 
 	}
 	
 	void moveUp()
@@ -50,7 +54,7 @@ public class Gridable {
 	
 	boolean canMoveDown()
 	{
-		return row > 0 && !map[row - 1][col]; 
+		return row > 0 && !map[row - 1][col].w; 
 	}
 	
 	void moveDown()
@@ -65,7 +69,7 @@ public class Gridable {
 	
 	boolean canMoveRight()
 	{
-		return col + 1 < map[0].length && !map[row][col+1]; 
+		return col + 1 < map[0].length && !map[row][col+1].w; 
 	}
 	
 	void moveRight()
@@ -80,7 +84,7 @@ public class Gridable {
 	
 	boolean canMoveLeft()
 	{
-		return col > 0 && !map[row][col-1]; 
+		return col > 0 && !map[row][col-1].w; 
 	}
 	
 	void moveLeft()

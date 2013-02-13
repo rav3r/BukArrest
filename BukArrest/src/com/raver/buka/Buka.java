@@ -8,24 +8,27 @@ import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Array;
+import com.raver.buka.BukArrestGame.MapField;
 
 public class Buka extends Gridable {
 	Sprite sprite;
 	
-	boolean[][] visited = new boolean[BukArrestGame.MAP_HEIGHT][BukArrestGame.MAP_WIDTH];
 	int[][] distance = new int[BukArrestGame.MAP_HEIGHT][BukArrestGame.MAP_WIDTH];
 	
-	class MapField
+	class MapDist
 	{
 		int row;
 		int col;
 		int dist;
+		boolean visited;
 	}
-	MapField[] fields;
+	MapDist[] fields;
 	
-	Buka(boolean[][] map, int row, int col)
+	Buka(MapField[][] map, int row, int col)
 	{
 		super(map, row, col);
+		
+		speed = 2.0f;
 		
 		Texture playerTex = new Texture(Gdx.files.internal("data/buka.png"));
 		playerTex.setFilter(TextureFilter.Linear, TextureFilter.Linear);
@@ -33,9 +36,9 @@ public class Buka extends Gridable {
 		sprite = new Sprite(playerTex);
 		sprite.setSize(40, 40);
 		
-		fields = new MapField[BukArrestGame.MAP_WIDTH*BukArrestGame.MAP_HEIGHT];
+		fields = new MapDist[BukArrestGame.MAP_WIDTH*BukArrestGame.MAP_HEIGHT];
 		for(int i=0; i<fields.length; i++)
-			fields[i] = new MapField();
+			fields[i] = new MapDist();
 	}
 
 	public void draw(SpriteBatch batch) {
@@ -44,62 +47,88 @@ public class Buka extends Gridable {
 	}
 	
 	public void onStop()
-	{		
-		for(int i=0; i<visited.length; i++)
-			for(int j=0; j<visited[i].length; j++)
-				visited[i][j] = false;
-	
+	{			
+		map[row][col].ice = 1;
+		if(map[row][col].fire)
+			BukArrestGame.self.burnBuka();
+		
+		for(int i=0; i<fields.length; i++)
+			fields[i].visited = false;
+		
 		int fieldsCount = 1;
 		fields[0].row = BukArrestGame.self.player.row;
 		fields[0].col = BukArrestGame.self.player.col;
 		fields[0].dist = 0;
 		
-		visited[row][col] = true;
-		
-		for(int i=0; i<fieldsCount; i++)
-		{
-			MapField f = fields[i];
-			
-			if(f.row > 0 && visited[f.row-1][f.col] == false && map[f.row-1][f.col] == false) 
-			{ 
-				fields[fieldsCount].row = f.row-1; fields[fieldsCount].col = f.col;
-				fields[fieldsCount].dist = f.dist + 1;
-				visited[f.row-1][f.col] = true;
-				fieldsCount++;
-			}
-			if(f.col > 0 && visited[f.row][f.col-1] == false && map[f.row][f.col-1] == false) 
-			{ 
-				fields[fieldsCount].row = f.row; fields[fieldsCount].col = f.col-1;
-				fields[fieldsCount].dist = f.dist + 1;
-				visited[f.row][f.col-1] = true;
-				fieldsCount++;
-			}
-			if(f.row + 1 < BukArrestGame.MAP_HEIGHT && visited[f.row+1][f.col] == false && map[f.row+1][f.col] == false) 
-			{ 
-				fields[fieldsCount].row = f.row + 1; fields[fieldsCount].col = f.col;
-				fields[fieldsCount].dist = f.dist + 1;
-				visited[f.row+1][f.col] = true;
-				fieldsCount++;
-			}
-			if(f.col + 1 < BukArrestGame.MAP_WIDTH && visited[f.row][f.col+1] == false && map[f.row][f.col+1] == false) 
-			{ 
-				fields[fieldsCount].row = f.row; fields[fieldsCount].col = f.col+1;
-				fields[fieldsCount].dist = f.dist + 1;
-				visited[f.row][f.col+1] = true;
-				fieldsCount++;
-			}
-		}
+		final int fireDist = BukArrestGame.MAP_HEIGHT*BukArrestGame.MAP_WIDTH;
 		
 		final int inf = 9999999;
 		
-		for(int i=0; i<visited.length; i++)
-			for(int j=0; j<visited[i].length; j++)
+		for(int i=0; i<distance.length; i++)
+			for(int j=0; j<distance[i].length; j++)
+			{
 				distance[i][j] = inf;
+			}
 		
-		for(int i=0; i<fieldsCount; i++)
+		distance[fields[0].row][fields[0].col] = 0;
+		
+		while(fieldsCount > 0)
 		{
-			MapField f = fields[i];
-			distance[f.row][f.col] = f.dist;
+			MapDist f;
+			int minDist = inf+inf;
+			int id = 0;
+			
+			for(int i=0; i<fieldsCount; i++)
+			{
+				if(fields[i].visited == false && fields[i].dist < minDist)
+				{
+					id = i;
+					minDist = fields[i].dist;
+				}
+			}
+			
+			if(minDist == inf+inf)
+				break;
+			
+			f = fields[id];
+			f.visited = true;
+			
+			if(f.row > 0 && distance[f.row-1][f.col] == inf && distance[f.row-1][f.col] > f.dist+1 && map[f.row-1][f.col].w == false) 
+			{ 
+				fields[fieldsCount].row = f.row-1; fields[fieldsCount].col = f.col;
+				fields[fieldsCount].dist = f.dist + 1;
+				MapDist c = fields[fieldsCount];
+				if(map[c.row][c.col].fire) c.dist += fireDist;
+				distance[c.row][c.col] = c.dist;
+				fieldsCount++;
+			}
+			if(f.col > 0 && distance[f.row][f.col-1] == inf && distance[f.row][f.col-1] > f.dist+1 && map[f.row][f.col-1].w == false) 
+			{ 
+				fields[fieldsCount].row = f.row; fields[fieldsCount].col = f.col-1;
+				fields[fieldsCount].dist = f.dist + 1;
+				MapDist c = fields[fieldsCount];
+				if(map[c.row][c.col].fire) c.dist += fireDist;
+				distance[c.row][c.col] = c.dist;
+				fieldsCount++;
+			}
+			if(f.row + 1 < BukArrestGame.MAP_HEIGHT && distance[f.row+1][f.col] == inf && distance[f.row+1][f.col] > f.dist+1 && map[f.row+1][f.col].w == false) 
+			{ 
+				fields[fieldsCount].row = f.row + 1; fields[fieldsCount].col = f.col;
+				fields[fieldsCount].dist = f.dist + 1;
+				MapDist c = fields[fieldsCount];
+				if(map[c.row][c.col].fire) c.dist += fireDist;
+				distance[c.row][c.col] = c.dist;
+				fieldsCount++;
+			}
+			if(f.col + 1 < BukArrestGame.MAP_WIDTH && distance[f.row][f.col+1] == inf && distance[f.row][f.col+1] > f.dist+1 && map[f.row][f.col+1].w == false) 
+			{ 
+				fields[fieldsCount].row = f.row; fields[fieldsCount].col = f.col+1;
+				fields[fieldsCount].dist = f.dist + 1;
+				MapDist c = fields[fieldsCount];
+				if(map[c.row][c.col].fire) c.dist += fireDist;
+				distance[c.row][c.col] = c.dist;
+				fieldsCount++;
+			}
 		}
 		
 		int minDist = inf;

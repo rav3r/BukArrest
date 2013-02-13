@@ -24,22 +24,48 @@ public class BukArrestGame implements ApplicationListener {
 	private Texture wallTexture;
 	private Sprite wallSprite;
 	
+	private Texture fireTexture;
+	private Sprite fireSprite;
+	
+	private Texture iceTexture;
+	private Sprite iceSprite;
+	
 	static final int MAP_WIDTH = 800/40;
-	static final int MAP_HEIGHT = 600/40;
+	static final int MAP_HEIGHT = 600/40 - 1; // 40px for hud
 	
 	static final float HSCREEN_W = 400;
 	static final float HSCREEN_H = 300;
 	
-	private boolean[][] wallsMap = new boolean[MAP_HEIGHT][MAP_WIDTH];
+	boolean lastSpace = false;
+	
+	float bukaTemp = 100.0f;
+	
+	class MapField
+	{
+		boolean w;
+		boolean fire;
+		float ice;
+	}
+	
+	private MapField[][] wallsMap = new MapField[MAP_HEIGHT][MAP_WIDTH];
 	
 	public Player player;
 	public Buka buka;
+	
+	public int maxFires = 5;
+	public int fires = 0;
+	
+	public int bukaLifes = 3;
 	
 	static public BukArrestGame self;
 	
 	@Override
 	public void create() {
 		self = this;
+		
+		for(int i=0; i<wallsMap.length; i++)
+			for(int j=0; j<wallsMap[i].length; j++)
+				wallsMap[i][j] = new MapField();
 		
 		float w = Gdx.graphics.getWidth();
 		float h = Gdx.graphics.getHeight();
@@ -58,6 +84,18 @@ public class BukArrestGame implements ApplicationListener {
 		
 		wallSprite = new Sprite(wallTexture);
 		wallSprite.setSize(40, 40);
+		
+		fireTexture = new Texture(Gdx.files.internal("data/fire.png"));
+		fireTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		
+		fireSprite = new Sprite(fireTexture);
+		fireSprite.setSize(40, 40);
+		
+		iceTexture = new Texture(Gdx.files.internal("data/ice.png"));
+		iceTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		
+		iceSprite = new Sprite(iceTexture);
+		iceSprite.setSize(40, 40);
 		
 		XmlReader xmlReader = new XmlReader();
 		
@@ -78,7 +116,9 @@ public class BukArrestGame implements ApplicationListener {
 					row++;
 					continue;
 				}
-				wallsMap[MAP_HEIGHT - row - 1][col] = wtable.charAt(i) == '1';
+				wallsMap[MAP_HEIGHT - row - 1][col].w = wtable.charAt(i) == '1';
+				wallsMap[MAP_HEIGHT - row - 1][col].fire = false;
+				wallsMap[MAP_HEIGHT - row - 1][col].ice = 0;
 				col++;
 			}
 			
@@ -108,12 +148,41 @@ public class BukArrestGame implements ApplicationListener {
 		batch.setProjectionMatrix(camera.combined);
 		batch.begin();
 		
+		// hud
+		for(int i=0; i<maxFires-fires; i++)
+		{
+			fireSprite.setPosition(i*40-HSCREEN_W, 600-40-HSCREEN_H);
+			fireSprite.draw(batch);
+		}
+		for(int i=0; i<bukaLifes; i++)
+		{
+			buka.sprite.setPosition(HSCREEN_W-i*40-40, 600-40-HSCREEN_H);
+			buka.sprite.draw(batch);
+		}
+		
 		for(int row = 0; row < MAP_HEIGHT; row++)
 			for(int col = 0; col < MAP_WIDTH; col++)
 			{
-				Sprite spr = wallsMap[row][col] ? wallSprite : emptySprite;
+				Sprite spr = wallsMap[row][col].w ? wallSprite : emptySprite;
 				spr.setPosition(col*40-HSCREEN_W, row*40-HSCREEN_H);
 				spr.draw(batch);
+				
+				if(wallsMap[row][col].ice > 0)
+				{
+					float alpha = wallsMap[row][col].ice;
+					if(alpha > 0.9f) alpha = 1.0f - (alpha - 0.9f)*10.0f;
+					else alpha /= 0.9f;
+					
+					iceSprite.setColor(1,1,1,alpha);
+					iceSprite.setPosition(col*40-HSCREEN_W, row*40-HSCREEN_H);
+					iceSprite.draw(batch);
+				}
+				
+				if(wallsMap[row][col].fire)
+				{
+					fireSprite.setPosition(col*40-HSCREEN_W, row*40-HSCREEN_H);
+					fireSprite.draw(batch);
+				}
 			}
 		
 		player.draw(batch);
@@ -125,10 +194,46 @@ public class BukArrestGame implements ApplicationListener {
 		if(Gdx.input.isKeyPressed(Input.Keys.LEFT)) player.moveLeft();
 		if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)) player.moveRight();
 		
+		boolean space = Gdx.input.isKeyPressed(Input.Keys.SPACE);
+		if(space && !lastSpace)
+		{
+			if(wallsMap[player.row][player.col].fire == true)
+			{
+				wallsMap[player.row][player.col].fire = false;
+				fires--;
+			} else if(fires < maxFires)
+			{
+				wallsMap[player.row][player.col].fire = true;
+				fires++;
+			}
+		}
+		lastSpace = space;
+		
+		for(int row = 0; row < MAP_HEIGHT; row++)
+			for(int col = 0; col < MAP_WIDTH; col++)
+				wallsMap[row][col].ice -= 0.1f*Gdx.graphics.getDeltaTime();
+		
 		player.update(Gdx.graphics.getDeltaTime());
 		buka.update(Gdx.graphics.getDeltaTime());
 	}
 
+	public void burnBuka()
+	{
+		
+		fires = 0;
+		for(int row = 0; row < MAP_HEIGHT; row++)
+			for(int col = 0; col < MAP_WIDTH; col++)
+			{
+				wallsMap[row][col].ice = 1;
+				wallsMap[row][col].fire = false;
+			}
+		bukaLifes--;
+		if(bukaLifes == 0)
+		{
+			
+		}
+	}
+	
 	@Override
 	public void resize(int width, int height) {
 	}

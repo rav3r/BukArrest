@@ -5,6 +5,8 @@ import java.io.IOException;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -80,6 +82,8 @@ public class BukArrestGame implements ApplicationListener {
 	
 	static public BukArrestGame self;
 	
+	private Music bgMusic;
+	
 	enum GameState
 	{
 		Tutorial,
@@ -89,6 +93,30 @@ public class BukArrestGame implements ApplicationListener {
 		HappyEnd
 	}
 	GameState gameState = GameState.Gameplay;
+	
+	enum SoundType
+	{
+		FireUp,
+		FireDown,
+		Aaaaa,
+		ThankYou,
+		Frozen
+	}
+	
+	Sound sndFireUp;
+	Sound sndFireDown;
+	Sound sndAaaaa;
+	Sound sndThankYou;
+	Sound sndFrozen;
+	
+	public void playSound(SoundType type)
+	{
+		if(type == SoundType.FireUp) sndFireUp.play();
+		if(type == SoundType.FireDown) sndFireDown.play();
+		if(type == SoundType.Aaaaa) sndAaaaa.play();
+		if(type == SoundType.ThankYou) sndThankYou.play();
+		if(type == SoundType.Frozen) sndFrozen.play();
+	}
 	
 	@Override
 	public void create() {
@@ -103,6 +131,16 @@ public class BukArrestGame implements ApplicationListener {
 		
 		camera = new OrthographicCamera(800, 600);
 		batch = new SpriteBatch();
+		
+		bgMusic = Gdx.audio.newMusic(Gdx.files.internal("data/music.mp3"));
+		bgMusic.setLooping(true);
+		bgMusic.play();
+		
+		sndFireUp =  Gdx.audio.newSound(Gdx.files.internal("data/fireup.wav"));
+		sndFireDown =  Gdx.audio.newSound(Gdx.files.internal("data/firedown.wav"));;
+		sndAaaaa =  Gdx.audio.newSound(Gdx.files.internal("data/scream.wav"));;
+		sndThankYou =  Gdx.audio.newSound(Gdx.files.internal("data/thank.wav"));;
+		sndFrozen =  Gdx.audio.newSound(Gdx.files.internal("data/wind.wav"));;
 		
 		emptyTexture = new Texture(Gdx.files.internal("data/empty.png"));
 		emptyTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
@@ -279,9 +317,11 @@ public class BukArrestGame implements ApplicationListener {
 				if(wallsMap[player.row][player.col].fire == true)
 				{
 					wallsMap[player.row][player.col].fire = false;
+					playSound(SoundType.FireDown);
 					fires--;
 				} else if(fires < maxFires)
 				{
+					playSound(SoundType.FireUp);
 					wallsMap[player.row][player.col].fire = true;
 					fires++;
 				}
@@ -312,7 +352,10 @@ public class BukArrestGame implements ApplicationListener {
 			if(bukaTemp < 0)
 			{
 				if(gameState == GameState.Gameplay)
+				{
 					gameState = GameState.HappyEnd;
+					playSound(SoundType.ThankYou);
+				}
 				bukaTemp = 0;
 			}
 		}
@@ -327,8 +370,10 @@ public class BukArrestGame implements ApplicationListener {
 		{
 			if(Math.abs(player.getX() - buka.getX()) < 40 &&
 					Math.abs(player.getY() - buka.getY()) < 40)
+			{
 				gameState = GameState.Frozen;
-				
+				playSound(SoundType.Frozen);
+			}
 		}
 	}
 
@@ -381,6 +426,7 @@ public class BukArrestGame implements ApplicationListener {
 		if(bukaLifes == 0)
 		{
 			gameState = GameState.BukaBurnt;
+			playSound(SoundType.Aaaaa);
 		} else
 		{
 			bukaTemp = 100.0f;

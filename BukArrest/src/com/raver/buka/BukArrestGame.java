@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -93,7 +94,7 @@ public class BukArrestGame implements ApplicationListener {
 			XmlReader.Element bukaEl = actors.getChildByName("buka");
 			XmlReader.Element playerEl = actors.getChildByName("you");
 			
-			player = new Player(MAP_HEIGHT - playerEl.getInt("y")/40 - 1, playerEl.getInt("x")/40);
+			player = new Player(wallsMap, MAP_HEIGHT - playerEl.getInt("y")/40 - 1, playerEl.getInt("x")/40);
 			buka = new Buka(MAP_HEIGHT - bukaEl.getInt("y")/40 - 1, bukaEl.getInt("x")/40);
 			
 		} catch (IOException e) {
@@ -128,6 +129,13 @@ public class BukArrestGame implements ApplicationListener {
 		player.draw(batch);
 		buka.draw(batch);
 		batch.end();
+		
+		if(Gdx.input.isKeyPressed(Input.Keys.UP)) player.moveUp();
+		if(Gdx.input.isKeyPressed(Input.Keys.DOWN)) player.moveDown();
+		if(Gdx.input.isKeyPressed(Input.Keys.LEFT)) player.moveLeft();
+		if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)) player.moveRight();
+		
+		player.update(Gdx.graphics.getDeltaTime());
 	}
 
 	@Override

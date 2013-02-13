@@ -6,16 +6,13 @@ import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
-public class Player {
+public class Player extends Gridable {
 	Sprite sprite;
-	int col;
-	int row;
-	
-	Player(int row, int col)
+
+	Player(boolean[][] map, int row, int col)
 	{
-		this.col = col;
-		this.row = row;
-		
+		super(map, row, col);
+
 		Texture playerTex = new Texture(Gdx.files.internal("data/player.png"));
 		playerTex.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		
@@ -24,7 +21,7 @@ public class Player {
 	}
 
 	public void draw(SpriteBatch batch) {
-		sprite.setPosition(col*40 - BukArrestGame.HSCREEN_W, row*40 - BukArrestGame.HSCREEN_H);
+		sprite.setPosition(getX() - BukArrestGame.HSCREEN_W, getY() - BukArrestGame.HSCREEN_H);
 		sprite.draw(batch);
 	}
 }

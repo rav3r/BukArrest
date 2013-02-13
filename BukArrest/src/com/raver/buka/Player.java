@@ -9,6 +9,7 @@ import com.raver.buka.BukArrestGame.MapField;
 
 public class Player extends Gridable {
 	Sprite sprite;
+	float gib = 0.0f;
 
 	Player(MapField[][] map, int row, int col)
 	{
@@ -22,7 +23,12 @@ public class Player extends Gridable {
 	}
 
 	public void draw(SpriteBatch batch) {
-		sprite.setPosition(getX() - BukArrestGame.HSCREEN_W, getY() - BukArrestGame.HSCREEN_H);
+		sprite.setPosition(getX() - BukArrestGame.HSCREEN_W, getY() - BukArrestGame.HSCREEN_H + 10);
+		sprite.setOrigin(20, 0);
+		if(isMoving())
+			sprite.setRotation((float)Math.sin(gib*20.0f)*5.0f);
+		else
+			sprite.setRotation(0);
 		sprite.draw(batch);
 	}
 	
@@ -32,5 +38,8 @@ public class Player extends Gridable {
 		if(slowing < 0) slowing = 0;
 		speed = 5.0f * (1 - slowing);
 		super.update(delta);
+		
+		if(isMoving())
+			gib += delta;
 	}
 }

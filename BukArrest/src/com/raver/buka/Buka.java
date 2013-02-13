@@ -42,13 +42,18 @@ public class Buka extends Gridable {
 	}
 
 	public void draw(SpriteBatch batch) {
-		sprite.setPosition(getX() - BukArrestGame.HSCREEN_W, getY() - BukArrestGame.HSCREEN_H);
+		sprite.setPosition(getX() - BukArrestGame.HSCREEN_W, getY() - BukArrestGame.HSCREEN_H + 10);
 		sprite.draw(batch);
 	}
 	
 	public void onStop()
 	{			
-		map[row][col].ice = 1;
+		if(map[row][col].ice < 0)
+			map[row][col].ice = 1;
+		else if(map[row][col].ice < 0.1f)
+			map[row][col].ice = 1.0f;
+		else
+			map[row][col].ice = 0.9f;
 		if(map[row][col].fire)
 			BukArrestGame.self.burnBuka();
 		

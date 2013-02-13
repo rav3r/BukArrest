@@ -27,6 +27,11 @@ public class BukArrestGame implements ApplicationListener {
 	private Texture fireTexture;
 	private Sprite fireSprite;
 	
+	
+	float fireAnim = 0;
+	private Texture[] firesTexture = new Texture[3];
+	private Sprite[] firesSprite = new Sprite[3];
+	
 	private Texture iceTexture;
 	private Sprite iceSprite;
 	
@@ -40,6 +45,9 @@ public class BukArrestGame implements ApplicationListener {
 	private Texture deadTexture;
 	private Sprite deadSprite;
 	
+	private Texture hudBgTexture;
+	private Sprite hudBgSprite;
+	
 	static final int MAP_WIDTH = 800/40;
 	static final int MAP_HEIGHT = 600/40 - 1; // 40px for hud
 	
@@ -49,6 +57,7 @@ public class BukArrestGame implements ApplicationListener {
 	boolean lastSpace = false;
 	
 	float bukaTemp = 100.0f;
+	boolean leftSprite = true;
 	
 	class MapField
 	{
@@ -96,19 +105,28 @@ public class BukArrestGame implements ApplicationListener {
 		emptyTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		
 		emptySprite = new Sprite(emptyTexture);
-		emptySprite.setSize(40, 40);
+		emptySprite.setSize(240, 240);
 		
 		wallTexture = new Texture(Gdx.files.internal("data/wall.png"));
 		wallTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		
 		wallSprite = new Sprite(wallTexture);
-		wallSprite.setSize(40, 40);
+		wallSprite.setSize(48, 48);
 		
 		fireTexture = new Texture(Gdx.files.internal("data/fire.png"));
 		fireTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		
 		fireSprite = new Sprite(fireTexture);
-		fireSprite.setSize(40, 40);
+		fireSprite.setSize(32, 32);
+		
+		for(int i=0; i<3; i++)
+		{
+			firesTexture[i] = new Texture(Gdx.files.internal("data/fire"+(i+1)+".png"));
+			firesTexture[i].setFilter(TextureFilter.Linear, TextureFilter.Linear);
+			
+			firesSprite[i] = new Sprite(firesTexture[i]);
+			firesSprite[i].setSize(32, 32);
+		}
 		
 		iceTexture = new Texture(Gdx.files.internal("data/ice.png"));
 		iceTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
@@ -121,6 +139,12 @@ public class BukArrestGame implements ApplicationListener {
 		
 		tempSprite = new Sprite(tempTexture);
 		tempSprite.setSize(40*6, 40);
+		
+		hudBgTexture = new Texture(Gdx.files.internal("data/hudBg.png"));
+		hudBgTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		
+		hudBgSprite = new Sprite(hudBgTexture);
+		hudBgSprite.setSize(802, 40);
 		
 		bukaBurntTexture = new Texture(Gdx.files.internal("data/bukaBurnt.png"));
 		bukaBurntTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
@@ -156,10 +180,20 @@ public class BukArrestGame implements ApplicationListener {
 		batch.setProjectionMatrix(camera.combined);
 		batch.begin();
 		
+		for(int row = 0; row < 3; row++)
+			for(int col = 0; col < 4; col++)
+			{
+					emptySprite.setPosition(col*emptySprite.getWidth()-HSCREEN_W, row*emptySprite.getHeight()-HSCREEN_H);
+					emptySprite.draw(batch);
+			}
+		
 		// hud
+		hudBgSprite.setPosition(-hudBgSprite.getWidth()/2.0f, HSCREEN_H-40);
+		hudBgSprite.draw(batch);
+		
 		for(int i=0; i<maxFires-fires; i++)
 		{
-			fireSprite.setPosition(i*40-HSCREEN_W, 600-40-HSCREEN_H);
+			fireSprite.setPosition(i*40-HSCREEN_W, 600-40-HSCREEN_H+10);
 			fireSprite.draw(batch);
 		}
 		for(int i=0; i<bukaLifes; i++)
@@ -169,18 +203,14 @@ public class BukArrestGame implements ApplicationListener {
 		}
 		
 		float tempFactor = bukaTemp/100.0f;
-		tempSprite.setSize(tempFactor*6*40, tempSprite.getHeight());
-		tempSprite.setPosition(-tempSprite.getWidth()/2.0f, 600-40-HSCREEN_H);
+		tempSprite.setSize(tempFactor*6*40, 20);
+		tempSprite.setPosition(-tempSprite.getWidth()/2.0f, 600-40-HSCREEN_H+10);
 		tempSprite.setRegion(0, 0, (int)(512*tempFactor), 64);
 		tempSprite.draw(batch);
 		
 		for(int row = 0; row < MAP_HEIGHT; row++)
 			for(int col = 0; col < MAP_WIDTH; col++)
 			{
-				Sprite spr = wallsMap[row][col].w ? wallSprite : emptySprite;
-				spr.setPosition(col*40-HSCREEN_W, row*40-HSCREEN_H);
-				spr.draw(batch);
-				
 				if(wallsMap[row][col].ice > 0)
 				{
 					float alpha = wallsMap[row][col].ice;
@@ -191,15 +221,33 @@ public class BukArrestGame implements ApplicationListener {
 					iceSprite.setPosition(col*40-HSCREEN_W, row*40-HSCREEN_H);
 					iceSprite.draw(batch);
 				}
+			}
+		
+		for(int row = 0; row < MAP_HEIGHT; row++)
+			for(int col = 0; col < MAP_WIDTH; col++)
+			{
+				if(wallsMap[row][col].w)
+				{
+					wallSprite.setPosition(col*40-HSCREEN_W-4, row*40-HSCREEN_H-4);
+					wallSprite.draw(batch);
+				}
 				
 				if(wallsMap[row][col].fire)
 				{
-					fireSprite.setPosition(col*40-HSCREEN_W, row*40-HSCREEN_H);
+					fireSprite.setPosition(col*40-HSCREEN_W+4, row*40-HSCREEN_H+4);
 					fireSprite.draw(batch);
+					
+					int id = (int)fireAnim % 3;
+					Sprite fir = firesSprite[id];
+					fir.setPosition(col*40-HSCREEN_W+4, row*40-HSCREEN_H+4);
+					fir.draw(batch);
 				}
 			}
 		
+		player.sprite.flip(!leftSprite, false);
+		
 		player.draw(batch);
+		player.sprite.flip(!leftSprite, false);
 		buka.draw(batch);
 		
 		if(gameState == GameState.Frozen) deadSprite.draw(batch);
@@ -212,8 +260,8 @@ public class BukArrestGame implements ApplicationListener {
 		{
 			if(Gdx.input.isKeyPressed(Input.Keys.UP)) player.moveUp();
 			if(Gdx.input.isKeyPressed(Input.Keys.DOWN)) player.moveDown();
-			if(Gdx.input.isKeyPressed(Input.Keys.LEFT)) player.moveLeft();
-			if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)) player.moveRight();
+			if(Gdx.input.isKeyPressed(Input.Keys.LEFT)) { player.moveLeft(); leftSprite = true; }
+			if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)) { player.moveRight(); leftSprite = false; }
 		
 			boolean space = Gdx.input.isKeyPressed(Input.Keys.SPACE);
 			if(space && !lastSpace)
@@ -262,6 +310,8 @@ public class BukArrestGame implements ApplicationListener {
 		player.update(Gdx.graphics.getDeltaTime());
 		if(gameState != GameState.BukaBurnt)
 			buka.update(Gdx.graphics.getDeltaTime());
+		
+		fireAnim += Gdx.graphics.getDeltaTime()*16;
 		
 		if(gameState == GameState.Gameplay)
 		{

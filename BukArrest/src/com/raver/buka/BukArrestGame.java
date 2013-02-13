@@ -25,13 +25,16 @@ public class BukArrestGame implements ApplicationListener {
 	private Texture wallTexture;
 	private Sprite wallSprite;
 	
-	private final int MAP_WIDTH = 800/40;
-	private final int MAP_HEIGHT = 600/40;
+	static final int MAP_WIDTH = 800/40;
+	static final int MAP_HEIGHT = 600/40;
 	
-	private final float HSCREEN_W = 400;
-	private final float HSCREEN_H = 300;
+	static final float HSCREEN_W = 400;
+	static final float HSCREEN_H = 300;
 	
 	private boolean[][] wallsMap = new boolean[MAP_HEIGHT][MAP_WIDTH];
+	
+	private Player player;
+	private Buka buka;
 	
 	@Override
 	public void create() {		
@@ -86,6 +89,13 @@ public class BukArrestGame implements ApplicationListener {
 				col++;
 			}
 			
+			XmlReader.Element actors = element.getChildByName("actors");
+			XmlReader.Element bukaEl = actors.getChildByName("buka");
+			XmlReader.Element playerEl = actors.getChildByName("you");
+			
+			player = new Player(MAP_HEIGHT - playerEl.getInt("y")/40 - 1, playerEl.getInt("x")/40);
+			buka = new Buka(MAP_HEIGHT - bukaEl.getInt("y")/40 - 1, bukaEl.getInt("x")/40);
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -114,6 +124,9 @@ public class BukArrestGame implements ApplicationListener {
 				spr.setPosition(col*40-HSCREEN_W, row*40-HSCREEN_H);
 				spr.draw(batch);
 			}
+		
+		player.draw(batch);
+		buka.draw(batch);
 		batch.end();
 	}
 

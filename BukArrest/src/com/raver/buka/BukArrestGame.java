@@ -44,6 +44,8 @@ public class BukArrestGame implements ApplicationListener {
 	private Sprite happyEndSprite;
 	private Texture deadTexture;
 	private Sprite deadSprite;
+	private Texture tutorTexture;
+	private Sprite tutorSprite;
 	
 	private Texture hudBgTexture;
 	private Sprite hudBgSprite;
@@ -80,6 +82,7 @@ public class BukArrestGame implements ApplicationListener {
 	
 	enum GameState
 	{
+		Tutorial,
 		Gameplay,
 		Frozen,
 		BukaBurnt,
@@ -149,22 +152,30 @@ public class BukArrestGame implements ApplicationListener {
 		bukaBurntTexture = new Texture(Gdx.files.internal("data/bukaBurnt.png"));
 		bukaBurntTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		bukaBurntSprite = new Sprite(bukaBurntTexture);
-		bukaBurntSprite.setSize(256, 256);
-		bukaBurntSprite.setPosition(-128, -128);
+		bukaBurntSprite.setSize(512, 256);
+		bukaBurntSprite.setPosition(-256, -128);
 		
 		happyEndTexture = new Texture(Gdx.files.internal("data/happyEnd.png"));
 		happyEndTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		happyEndSprite = new Sprite(happyEndTexture);
-		happyEndSprite.setSize(256, 256);
-		happyEndSprite.setPosition(-128, -128);
+		happyEndSprite.setSize(512, 256);
+		happyEndSprite.setPosition(-256, -128);
 		
 		deadTexture = new Texture(Gdx.files.internal("data/frozen.png"));
 		deadTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 		deadSprite = new Sprite(deadTexture);
-		deadSprite.setSize(256, 256);
-		deadSprite.setPosition(-128, -128);
+		deadSprite.setSize(512, 256);
+		deadSprite.setPosition(-256, -128);
+		
+		tutorTexture = new Texture(Gdx.files.internal("data/tutorial.png"));
+		tutorTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		tutorSprite = new Sprite(tutorTexture);
+		tutorSprite.setSize(1024, 1024);
+		tutorSprite.setPosition(-512, -512);
 		
 		restartGame();
+		
+		gameState = GameState.Tutorial;
 	}
 
 	@Override
@@ -196,32 +207,30 @@ public class BukArrestGame implements ApplicationListener {
 			fireSprite.setPosition(i*40-HSCREEN_W, 600-40-HSCREEN_H+10);
 			fireSprite.draw(batch);
 		}
-		for(int i=0; i<bukaLifes; i++)
-		{
-			buka.sprite.setPosition(HSCREEN_W-i*40-40, 600-40-HSCREEN_H);
-			buka.sprite.draw(batch);
-		}
 		
 		float tempFactor = bukaTemp/100.0f;
 		tempSprite.setSize(tempFactor*6*40, 20);
-		tempSprite.setPosition(-tempSprite.getWidth()/2.0f, 600-40-HSCREEN_H+10);
+		tempSprite.setPosition(HSCREEN_W-tempSprite.getWidth()-10, 600-40-HSCREEN_H+10);
 		tempSprite.setRegion(0, 0, (int)(512*tempFactor), 64);
 		tempSprite.draw(batch);
 		
-		for(int row = 0; row < MAP_HEIGHT; row++)
-			for(int col = 0; col < MAP_WIDTH; col++)
-			{
-				if(wallsMap[row][col].ice > 0)
+		if(gameState != GameState.HappyEnd)
+		{
+			for(int row = 0; row < MAP_HEIGHT; row++)
+				for(int col = 0; col < MAP_WIDTH; col++)
 				{
-					float alpha = wallsMap[row][col].ice;
-					if(alpha > 0.9f) alpha = 1.0f - (alpha - 0.9f)*10.0f;
-					else alpha /= 0.9f;
+					if(wallsMap[row][col].ice > 0)
+					{
+						float alpha = wallsMap[row][col].ice;
+						if(alpha > 0.9f) alpha = 1.0f - (alpha - 0.9f)*10.0f;
+						else alpha /= 0.9f;
 					
-					iceSprite.setColor(1,1,1,alpha);
-					iceSprite.setPosition(col*40-HSCREEN_W, row*40-HSCREEN_H);
-					iceSprite.draw(batch);
+						iceSprite.setColor(1,1,1,alpha);
+						iceSprite.setPosition(col*40-HSCREEN_W, row*40-HSCREEN_H);
+						iceSprite.draw(batch);
+					}
 				}
-			}
+		}
 		
 		for(int row = 0; row < MAP_HEIGHT; row++)
 			for(int col = 0; col < MAP_WIDTH; col++)
@@ -253,6 +262,7 @@ public class BukArrestGame implements ApplicationListener {
 		if(gameState == GameState.Frozen) deadSprite.draw(batch);
 		if(gameState == GameState.BukaBurnt) bukaBurntSprite.draw(batch);
 		if(gameState == GameState.HappyEnd) happyEndSprite.draw(batch);
+		if(gameState == GameState.Tutorial) tutorSprite.draw(batch);
 		
 		batch.end();
 		
@@ -324,7 +334,7 @@ public class BukArrestGame implements ApplicationListener {
 
 	public void restartGame()
 	{
-		bukaLifes = 3;
+		bukaLifes = 1;
 		fires = 0;
 		bukaTemp = 100.0f;
 		

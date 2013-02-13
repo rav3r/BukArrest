@@ -16,6 +16,10 @@ public class Gridable {
 		this.row = this.nextRow = row;
 	}
 	
+	public void onStop()
+	{
+	}
+	
 	void update(float delta)
 	{
 		progress += delta*5;
@@ -24,6 +28,8 @@ public class Gridable {
 		{
 			col = nextCol;
 			row = nextRow;
+			
+			onStop();
 		}
 	}
 	
